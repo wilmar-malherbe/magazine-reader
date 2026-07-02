@@ -1,0 +1,12 @@
+    <% if (!locals.hideFooter) { %>
+      <footer class="site-footer">
+        <div class="shell footer-inner">
+          <span><%= appName %> · Your self-hosted magazine shelf</span>
+          <% if (!isAdmin) { %>
+            <a href="/admin/login">Admin login</a>
+          <% } %>
+        </div>
+      </footer>
+    <% } %>
+  </body>
+</html>

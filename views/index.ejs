@@ -1,0 +1,66 @@
+<%- include("partials/head", { title, bodyClass: "library-page" }) %>
+
+<main class="shell page-main">
+  <section class="hero">
+    <p class="eyebrow">Your digital collection</p>
+    <h1>Pick up where curiosity left off.</h1>
+    <p>Browse the latest issues and read them right here in your browser.</p>
+  </section>
+
+  <% if (magazines.length === 0) { %>
+    <section class="empty-state">
+      <div class="empty-icon" aria-hidden="true">⌁</div>
+      <h2>The shelf is waiting</h2>
+      <p>No magazines have been published yet.</p>
+      <% if (isAdmin) { %>
+        <a class="button button-primary" href="/admin">Add the first magazine</a>
+      <% } %>
+    </section>
+  <% } else { %>
+    <section aria-labelledby="magazines-title">
+      <div class="section-heading">
+        <h2 id="magazines-title">Latest magazines</h2>
+        <span><%= magazines.length %> <%= magazines.length === 1 ? "issue" : "issues" %></span>
+      </div>
+      <div class="magazine-grid">
+        <% magazines.forEach((magazine) => { %>
+          <article class="magazine-card">
+            <a class="cover-link" href="/m/<%= magazine.slug %>" aria-label="Read <%= magazine.title %>">
+              <% if (magazine.cover_filename) { %>
+                <img
+                  class="magazine-cover"
+                  src="/media/covers/<%= magazine.cover_filename %>"
+                  alt="Cover of <%= magazine.title %>"
+                  loading="lazy"
+                >
+              <% } else { %>
+                <div class="cover-placeholder">
+                  <span class="cover-monogram" aria-hidden="true"><%= magazine.title.slice(0, 1).toUpperCase() %></span>
+                  <span><%= magazine.title %></span>
+                </div>
+              <% } %>
+            </a>
+            <div class="card-body">
+              <div class="issue-meta">
+                <% if (magazine.issue_label) { %><span><%= magazine.issue_label %></span><% } %>
+                <% if (magazine.issue_date) { %><time datetime="<%= magazine.issue_date %>"><%= formatDate(magazine.issue_date) %></time><% } %>
+              </div>
+              <h3><a href="/m/<%= magazine.slug %>"><%= magazine.title %></a></h3>
+              <% if (magazine.description) { %>
+                <p class="card-description"><%= magazine.description %></p>
+              <% } %>
+              <div class="card-actions">
+                <a class="button button-primary" href="/m/<%= magazine.slug %>">Read issue</a>
+                <% if (allowPublicDownload) { %>
+                  <a class="button button-quiet" href="/media/pdfs/<%= magazine.pdf_filename %>?download=1">Download</a>
+                <% } %>
+              </div>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+</main>
+
+<%- include("partials/foot") %>

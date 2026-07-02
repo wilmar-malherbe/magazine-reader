@@ -1,0 +1,15 @@
+<%- include("partials/head", { title, bodyClass: "error-page" }) %>
+
+<main class="shell error-main">
+  <section class="error-card">
+    <p class="error-code"><%= status %></p>
+    <h1><%= title %></h1>
+    <p><%= message %></p>
+    <div class="button-row">
+      <a class="button button-primary" href="/">Back to library</a>
+      <% if (isAdmin) { %><a class="button button-quiet" href="/admin">Admin dashboard</a><% } %>
+    </div>
+  </section>
+</main>
+
+<%- include("partials/foot") %>

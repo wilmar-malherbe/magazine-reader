@@ -1,0 +1,35 @@
+services:
+  magshelf:
+    build: .
+    container_name: magshelf
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      APP_NAME: "${APP_NAME:-MagShelf}"
+      PORT: "3000"
+      DATA_DIR: "/data"
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-http://localhost:3000}"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:?Set ADMIN_USERNAME in .env}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}"
+      SESSION_SECRET: "${SESSION_SECRET:?Set SESSION_SECRET in .env}"
+      MAX_UPLOAD_MB: "${MAX_UPLOAD_MB:-500}"
+      ALLOW_PUBLIC_DOWNLOAD: "${ALLOW_PUBLIC_DOWNLOAD:-true}"
+    volumes:
+      - "${MAGSHELF_DATA_PATH:-./data}:/data"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

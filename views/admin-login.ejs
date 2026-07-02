@@ -1,0 +1,25 @@
+<%- include("partials/head", { title, bodyClass: "auth-page" }) %>
+
+<main class="auth-main">
+  <section class="auth-card" aria-labelledby="login-title">
+    <p class="eyebrow">Private access</p>
+    <h1 id="login-title">Admin login</h1>
+    <p class="muted">Sign in to manage your magazine shelf.</p>
+    <% if (error) { %>
+      <div class="form-error" role="alert"><%= error %></div>
+    <% } %>
+    <form method="post" action="/admin/login" class="form-stack">
+      <label>
+        <span>Username</span>
+        <input name="username" type="text" autocomplete="username" required autofocus>
+      </label>
+      <label>
+        <span>Password</span>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="button button-primary button-block" type="submit">Sign in</button>
+    </form>
+  </section>
+</main>
+
+<%- include("partials/foot") %>

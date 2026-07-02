@@ -1,0 +1,83 @@
+<%- include("partials/head", {
+  title,
+  bodyClass: "viewer-page",
+  hideHeader: true,
+  hideFooter: true
+}) %>
+
+<main
+  id="magazine-viewer"
+  class="viewer-shell"
+  data-pdf-url="/media/pdfs/<%= magazine.pdf_filename %>"
+  data-title="<%= magazine.title %>"
+  data-orientation="loading"
+  data-current-page="1"
+>
+  <header class="viewer-header">
+    <a class="viewer-back" href="/" aria-label="Back to library">
+      <span aria-hidden="true">←</span>
+      <span>Library</span>
+    </a>
+    <div class="viewer-title">
+      <h1><%= magazine.title %></h1>
+      <% if (magazine.issue_label || magazine.issue_date) { %>
+        <p>
+          <%= magazine.issue_label || "" %>
+          <% if (magazine.issue_label && magazine.issue_date) { %> · <% } %>
+          <% if (magazine.issue_date) { %><%= formatDate(magazine.issue_date) %><% } %>
+        </p>
+      <% } %>
+    </div>
+    <% if (allowPublicDownload) { %>
+      <a class="viewer-download" href="/media/pdfs/<%= magazine.pdf_filename %>?download=1">
+        <span aria-hidden="true">↓</span>
+        <span>Download</span>
+      </a>
+    <% } else { %>
+      <span class="viewer-header-spacer" aria-hidden="true"></span>
+    <% } %>
+  </header>
+
+  <section class="viewer-stage" id="viewer-stage" aria-label="<%= magazine.title %> reader">
+    <div class="book-zoom-layer" id="book-zoom-layer">
+      <div id="flipbook" aria-live="off"></div>
+    </div>
+    <div class="viewer-loading" id="viewer-loading" role="status">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>Opening magazine…</span>
+    </div>
+    <div class="viewer-error" id="viewer-error" role="alert" hidden>
+      <strong>We couldn’t open this magazine.</strong>
+      <span>Try refreshing the page or downloading the PDF.</span>
+    </div>
+  </section>
+
+  <nav class="viewer-toolbar" aria-label="Magazine controls">
+    <div class="toolbar-group">
+      <button id="previous-page" class="tool-button" type="button" aria-label="Previous page" disabled>
+        <span aria-hidden="true">←</span>
+      </button>
+      <div id="page-status" class="page-status" role="status" aria-live="polite">Page 1</div>
+      <button id="next-page" class="tool-button" type="button" aria-label="Next page" disabled>
+        <span aria-hidden="true">→</span>
+      </button>
+    </div>
+    <div class="toolbar-group">
+      <button id="zoom-out" class="tool-button" type="button" aria-label="Zoom out" disabled>
+        <span aria-hidden="true">−</span>
+      </button>
+      <span id="zoom-status" class="zoom-status" aria-live="polite">100%</span>
+      <button id="zoom-in" class="tool-button" type="button" aria-label="Zoom in" disabled>
+        <span aria-hidden="true">+</span>
+      </button>
+      <button id="fullscreen" class="tool-button" type="button" aria-label="Enter fullscreen">
+        <span aria-hidden="true">⛶</span>
+      </button>
+    </div>
+  </nav>
+
+  <p id="viewer-announcement" class="sr-only" aria-live="polite"></p>
+</main>
+
+<script type="module" src="/js/magazine-viewer.js"></script>
+<%- include("partials/foot", { hideFooter: true }) %>

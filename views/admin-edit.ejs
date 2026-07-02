@@ -1,0 +1,59 @@
+<%- include("partials/head", { title, bodyClass: "admin-page" }) %>
+
+<main class="shell page-main narrow-main">
+  <div class="admin-heading">
+    <div>
+      <p class="eyebrow">Magazine management</p>
+      <h1>Edit magazine</h1>
+    </div>
+    <a class="button button-quiet" href="/admin">Back to dashboard</a>
+  </div>
+
+  <section class="panel">
+    <form method="post" action="/admin/magazines/<%= magazine.id %>/edit" enctype="multipart/form-data" class="magazine-form">
+      <div class="form-grid">
+        <label class="field-span-2">
+          <span>Title <strong aria-hidden="true">*</strong></span>
+          <input name="title" type="text" maxlength="200" value="<%= magazine.title %>" required>
+        </label>
+        <label>
+          <span>Issue label</span>
+          <input name="issue_label" type="text" maxlength="160" value="<%= magazine.issue_label || '' %>">
+        </label>
+        <label>
+          <span>Issue date</span>
+          <input name="issue_date" type="date" value="<%= magazine.issue_date || '' %>">
+        </label>
+        <label class="field-span-2">
+          <span>Slug</span>
+          <input name="slug" type="text" maxlength="160" value="<%= magazine.slug %>" required>
+        </label>
+        <label class="field-span-2">
+          <span>Description</span>
+          <textarea name="description" rows="5" maxlength="10000"><%= magazine.description || '' %></textarea>
+        </label>
+        <label class="file-field">
+          <span>Replace PDF <small>optional · max <%= maxUploadMb %> MB</small></span>
+          <input name="pdf" type="file" accept=".pdf,application/pdf">
+          <small>Current: <%= magazine.original_pdf_filename %></small>
+        </label>
+        <label class="file-field">
+          <span>Replace cover <small>optional</small></span>
+          <input name="cover" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+        </label>
+      </div>
+      <div class="form-footer">
+        <label class="checkbox-field">
+          <input name="is_published" type="checkbox" <%= magazine.is_published ? "checked" : "" %>>
+          <span>Published</span>
+        </label>
+        <div class="button-row">
+          <a class="button button-quiet" href="/admin">Cancel</a>
+          <button class="button button-primary" type="submit">Save changes</button>
+        </div>
+      </div>
+    </form>
+  </section>
+</main>
+
+<%- include("partials/foot") %>

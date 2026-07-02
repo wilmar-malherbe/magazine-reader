@@ -1,0 +1,115 @@
+<%- include("partials/head", { title, bodyClass: "admin-page" }) %>
+
+<main class="shell page-main">
+  <div class="admin-heading">
+    <div>
+      <p class="eyebrow">Magazine management</p>
+      <h1>Admin dashboard</h1>
+    </div>
+    <form method="post" action="/admin/logout">
+      <button class="button button-quiet" type="submit">Log out</button>
+    </form>
+  </div>
+
+  <section class="panel" aria-labelledby="upload-title">
+    <div class="panel-heading">
+      <div>
+        <h2 id="upload-title">Add a magazine</h2>
+        <p>PDF required · cover optional · maximum <%= maxUploadMb %> MB per file</p>
+      </div>
+    </div>
+    <form method="post" action="/admin/magazines" enctype="multipart/form-data" class="magazine-form">
+      <div class="form-grid">
+        <label class="field-span-2">
+          <span>Title <strong aria-hidden="true">*</strong></span>
+          <input name="title" type="text" maxlength="200" required>
+        </label>
+        <label>
+          <span>Issue label</span>
+          <input name="issue_label" type="text" maxlength="160" placeholder="July 2026 or Issue 12">
+        </label>
+        <label>
+          <span>Issue date</span>
+          <input name="issue_date" type="date">
+        </label>
+        <label class="field-span-2">
+          <span>Slug <small>optional</small></span>
+          <input name="slug" type="text" maxlength="160" placeholder="Generated automatically when left blank">
+        </label>
+        <label class="field-span-2">
+          <span>Description</span>
+          <textarea name="description" rows="4" maxlength="10000"></textarea>
+        </label>
+        <label class="file-field">
+          <span>PDF magazine <strong aria-hidden="true">*</strong></span>
+          <input name="pdf" type="file" accept=".pdf,application/pdf" required>
+        </label>
+        <label class="file-field">
+          <span>Cover image</span>
+          <input name="cover" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+        </label>
+      </div>
+      <div class="form-footer">
+        <label class="checkbox-field">
+          <input name="is_published" type="checkbox" checked>
+          <span>Publish immediately</span>
+        </label>
+        <button class="button button-primary" type="submit">Add magazine</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="collection-title">
+    <div class="panel-heading">
+      <div>
+        <h2 id="collection-title">Your collection</h2>
+        <p><%= magazines.length %> <%= magazines.length === 1 ? "magazine" : "magazines" %></p>
+      </div>
+    </div>
+    <% if (magazines.length === 0) { %>
+      <div class="compact-empty">Upload your first PDF using the form above.</div>
+    <% } else { %>
+      <div class="admin-list">
+        <% magazines.forEach((magazine) => { %>
+          <article class="admin-item">
+            <div class="admin-thumb">
+              <% if (magazine.cover_filename) { %>
+                <img src="/media/covers/<%= magazine.cover_filename %>" alt="" loading="lazy">
+              <% } else { %>
+                <span aria-hidden="true"><%= magazine.title.slice(0, 1).toUpperCase() %></span>
+              <% } %>
+            </div>
+            <div class="admin-item-main">
+              <div class="admin-item-title">
+                <h3><%= magazine.title %></h3>
+                <span class="status <%= magazine.is_published ? "status-live" : "status-draft" %>">
+                  <%= magazine.is_published ? "Published" : "Unpublished" %>
+                </span>
+              </div>
+              <p>
+                <%= magazine.issue_label || "No issue label" %>
+                <% if (magazine.issue_date) { %> · <%= formatDate(magazine.issue_date) %><% } %>
+              </p>
+              <code>/m/<%= magazine.slug %></code>
+            </div>
+            <div class="admin-actions">
+              <a class="button button-small button-quiet" href="/m/<%= magazine.slug %>">View</a>
+              <a class="button button-small button-quiet" href="/admin/magazines/<%= magazine.id %>/edit">Edit</a>
+              <form method="post" action="/admin/magazines/<%= magazine.id %>/toggle-published">
+                <button class="button button-small button-quiet" type="submit">
+                  <%= magazine.is_published ? "Unpublish" : "Publish" %>
+                </button>
+              </form>
+              <form method="post" action="/admin/magazines/<%= magazine.id %>/delete" data-confirm="Delete <%= magazine.title %>? This cannot be undone.">
+                <button class="button button-small button-danger" type="submit">Delete</button>
+              </form>
+            </div>
+          </article>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+</main>
+
+<script src="/js/admin.js" defer></script>
+<%- include("partials/foot") %>
