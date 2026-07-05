@@ -20,21 +20,136 @@ if (viewer) {
   const zoomOutButton = document.querySelector("#zoom-out");
   const zoomInButton = document.querySelector("#zoom-in");
   const fullscreenButton = document.querySelector("#fullscreen");
+  const layoutSwitch = document.querySelector("#layout-switch");
+  const singleLayoutButton = document.querySelector("#layout-single");
+  const spreadLayoutButton = document.querySelector("#layout-spread");
+  const layoutDialog = document.querySelector("#layout-choice");
+  const layoutChoiceButtons = layoutDialog.querySelectorAll(
+    "[data-layout-choice]",
+  );
 
   const state = {
     pdf: null,
     pageFlip: null,
     currentPage: 0,
     orientation: "portrait",
+    preferredLayout: "single",
+    layout: "loading",
+    layoutEligible: false,
+    layoutChoiceResolver: null,
+    layoutChoiceCleanup: null,
     zoom: 1,
     renderCache: new Map(),
     resizeTimer: null,
     panning: null,
   };
 
+  const desktopLayoutQuery = window.matchMedia(
+    "(min-width: 1024px) and (hover: hover) and (pointer: fine)",
+  );
   const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
+
+  function updateLayoutButtons() {
+    singleLayoutButton.setAttribute(
+      "aria-pressed",
+      String(state.preferredLayout === "single"),
+    );
+    spreadLayoutButton.setAttribute(
+      "aria-pressed",
+      String(state.preferredLayout === "spread"),
+    );
+  }
+
+  function portraitMinWidth() {
+    return Math.max(220, Math.floor(flipbook.clientWidth / 2) + 1);
+  }
+
+  function applyLayout(layout, announce = false) {
+    const nextLayout = layout === "spread" ? "spread" : "single";
+    const changed = state.layout !== nextLayout;
+    state.layout = nextLayout;
+    viewer.dataset.layout = nextLayout;
+    updateLayoutButtons();
+
+    if (!state.pageFlip) return;
+
+    const currentPage = state.pageFlip.getCurrentPageIndex();
+    const settings = state.pageFlip.getSettings();
+    settings.usePortrait = nextLayout === "single";
+    settings.minWidth =
+      nextLayout === "single" ? portraitMinWidth() : 220;
+    state.pageFlip.update();
+    state.pageFlip.turnToPage(currentPage);
+    updateOrientation(state.pageFlip.getOrientation());
+
+    if (announce && changed) {
+      announcement.textContent =
+        nextLayout === "spread"
+          ? "Two-page spread view"
+          : "Single-page view";
+    }
+  }
+
+  function syncLayoutAvailability(announce = false) {
+    const wasEligible = state.layoutEligible;
+    state.layoutEligible = desktopLayoutQuery.matches;
+    layoutSwitch.hidden = !state.pageFlip || !state.layoutEligible;
+
+    const effectiveLayout = state.layoutEligible
+      ? state.preferredLayout
+      : "single";
+    applyLayout(
+      effectiveLayout,
+      announce && wasEligible !== state.layoutEligible,
+    );
+  }
+
+  function selectPreferredLayout(layout, announce = true) {
+    if (!state.layoutEligible) return;
+    state.preferredLayout = layout === "spread" ? "spread" : "single";
+    applyLayout(state.preferredLayout, announce);
+  }
+
+  function finishLayoutChoice(layout) {
+    if (!state.layoutChoiceResolver) return;
+
+    const resolve = state.layoutChoiceResolver;
+    state.layoutChoiceCleanup?.();
+    state.layoutChoiceResolver = null;
+    state.layoutChoiceCleanup = null;
+    if (layoutDialog.open) layoutDialog.close();
+    resolve(layout === "spread" ? "spread" : "single");
+  }
+
+  function requestInitialLayout() {
+    state.layoutEligible = desktopLayoutQuery.matches;
+    layoutSwitch.hidden = true;
+
+    if (!state.layoutEligible) {
+      state.preferredLayout = "single";
+      applyLayout("single");
+      return Promise.resolve("single");
+    }
+
+    return new Promise((resolve) => {
+      const onChoice = (event) => {
+        finishLayoutChoice(event.currentTarget.dataset.layoutChoice);
+      };
+
+      state.layoutChoiceResolver = resolve;
+      state.layoutChoiceCleanup = () => {
+        layoutChoiceButtons.forEach((button) => {
+          button.removeEventListener("click", onChoice);
+        });
+      };
+      layoutChoiceButtons.forEach((button) => {
+        button.addEventListener("click", onChoice);
+      });
+      layoutDialog.showModal();
+    });
+  }
 
   function pageElements(pageNumber) {
     return viewer.querySelectorAll(
@@ -315,6 +430,15 @@ if (viewer) {
     zoomOutButton.addEventListener("click", () => setZoom(state.zoom - 0.25));
     zoomInButton.addEventListener("click", () => setZoom(state.zoom + 0.25));
     fullscreenButton.addEventListener("click", toggleFullscreen);
+    singleLayoutButton.addEventListener("click", () => {
+      selectPreferredLayout("single");
+    });
+    spreadLayoutButton.addEventListener("click", () => {
+      selectPreferredLayout("spread");
+    });
+    layoutDialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+    });
 
     if (!document.fullscreenEnabled) fullscreenButton.hidden = true;
 
@@ -326,6 +450,7 @@ if (viewer) {
     });
 
     document.addEventListener("keydown", (event) => {
+      if (layoutDialog.open) return;
       if (
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement
@@ -384,14 +509,18 @@ if (viewer) {
     stage.addEventListener("pointerup", endPan, true);
     stage.addEventListener("pointercancel", endPan, true);
 
+    desktopLayoutQuery.addEventListener("change", () => {
+      if (!desktopLayoutQuery.matches && layoutDialog.open) {
+        finishLayoutChoice("single");
+      }
+      syncLayoutAvailability(true);
+    });
+
     window.addEventListener("resize", () => {
       window.clearTimeout(state.resizeTimer);
       state.resizeTimer = window.setTimeout(() => {
         if (!state.pageFlip) return;
-        const page = state.pageFlip.getCurrentPageIndex();
-        state.pageFlip.turnToPage(page);
-        updateOrientation(state.pageFlip.getOrientation());
-        void renderAround(page);
+        syncLayoutAvailability();
       }, 180);
     });
 
@@ -412,7 +541,15 @@ if (viewer) {
         cMapUrl: "/vendor/pdfjs/cmaps/",
         cMapPacked: true,
       });
-      state.pdf = await loadingTask.promise;
+      const layoutPromise = requestInitialLayout();
+      const [pdf, initialLayout] = await Promise.all([
+        loadingTask.promise,
+        layoutPromise,
+      ]);
+      state.pdf = pdf;
+      state.preferredLayout = initialLayout;
+      applyLayout(initialLayout);
+
       const firstPage = await state.pdf.getPage(1);
       const firstViewport = firstPage.getViewport({ scale: 1 });
       const baseWidth = 1000;
@@ -426,13 +563,14 @@ if (viewer) {
         width: baseWidth,
         height: baseHeight,
         size: "stretch",
-        minWidth: 220,
+        minWidth:
+          initialLayout === "single" ? portraitMinWidth() : 220,
         maxWidth: baseWidth,
         minHeight: Math.round(220 * (baseHeight / baseWidth)),
         maxHeight: baseHeight,
         autoSize: false,
         showCover: true,
-        usePortrait: true,
+        usePortrait: initialLayout === "single",
         mobileScrollSupport: false,
         swipeDistance: 24,
         flippingTime: prefersReducedMotion ? 1 : 650,
@@ -447,9 +585,10 @@ if (viewer) {
         updatePageState(Number(event.data) || 0, true);
       });
       state.pageFlip.on("changeOrientation", (event) => {
-        updateOrientation(String(event.data), true);
+        updateOrientation(String(event.data));
       });
       state.pageFlip.loadFromHTML(flipbook.querySelectorAll(".page"));
+      syncLayoutAvailability();
 
       await renderPage(0);
       loading.hidden = true;
@@ -461,9 +600,14 @@ if (viewer) {
       updatePageState(state.pageFlip.getCurrentPageIndex());
     } catch (initializationError) {
       console.error("Unable to initialize magazine viewer", initializationError);
+      state.layoutChoiceCleanup?.();
+      state.layoutChoiceResolver = null;
+      state.layoutChoiceCleanup = null;
+      if (layoutDialog.open) layoutDialog.close();
       loading.hidden = true;
       errorPanel.hidden = false;
       viewer.dataset.orientation = "error";
+      viewer.dataset.layout = "error";
     }
   }
 

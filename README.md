@@ -11,7 +11,7 @@ covers all live under one mounted `/data` directory.
 ## Features
 
 - Responsive library, admin dashboard, and reader for phones, tablets, and desktops
-- Single-page phone reader and two-page desktop spreads
+- Single-page phone/tablet reader with a one-page or two-page desktop choice
 - Lazy PDF.js page rendering, touch swipes, keyboard controls, zoom/pan, and fullscreen
 - Environment-controlled single administrator account
 - Publish/unpublish, metadata editing, PDF replacement, and coordinated deletion

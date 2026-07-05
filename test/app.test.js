@@ -154,6 +154,8 @@ describe("MagShelf HTTP application", { concurrency: false }, () => {
       const viewer = await anonymous.get(`/m/${row.slug}`);
       assert.equal(viewer.status, 200);
       assert.match(viewer.text, /id="magazine-viewer"/);
+      assert.match(viewer.text, /id="layout-choice"/);
+      assert.match(viewer.text, /id="layout-switch"/);
       assert.match(viewer.text, /magazine-viewer\.js/);
 
       const publicPdf = await anonymous.get(`/media/pdfs/${row.pdf_filename}`);

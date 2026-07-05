@@ -11,6 +11,7 @@
   data-pdf-url="/media/pdfs/<%= magazine.pdf_filename %>"
   data-title="<%= magazine.title %>"
   data-orientation="loading"
+  data-layout="loading"
   data-current-page="1"
 >
   <header class="viewer-header">
@@ -62,6 +63,32 @@
         <span aria-hidden="true">→</span>
       </button>
     </div>
+    <div
+      id="layout-switch"
+      class="toolbar-group layout-switch"
+      role="group"
+      aria-label="Page layout"
+      hidden
+    >
+      <button
+        id="layout-single"
+        class="layout-button"
+        type="button"
+        aria-label="Show one page at a time"
+        aria-pressed="false"
+      >
+        1 page
+      </button>
+      <button
+        id="layout-spread"
+        class="layout-button"
+        type="button"
+        aria-label="Show a two-page spread"
+        aria-pressed="false"
+      >
+        2 pages
+      </button>
+    </div>
     <div class="toolbar-group">
       <button id="zoom-out" class="tool-button" type="button" aria-label="Zoom out" disabled>
         <span aria-hidden="true">−</span>
@@ -77,6 +104,47 @@
   </nav>
 
   <p id="viewer-announcement" class="sr-only" aria-live="polite"></p>
+
+  <dialog
+    id="layout-choice"
+    class="layout-dialog"
+    aria-labelledby="layout-choice-title"
+    aria-describedby="layout-choice-description"
+  >
+    <div class="layout-dialog-content">
+      <p class="layout-dialog-eyebrow">Reading view</p>
+      <h2 id="layout-choice-title">How would you like to read?</h2>
+      <p id="layout-choice-description">
+        Choose a page layout for this magazine. You can change it later from the toolbar.
+      </p>
+      <div class="layout-choice-actions">
+        <button class="layout-choice-button" type="button" data-layout-choice="single">
+          <span class="layout-choice-preview layout-choice-preview-single" aria-hidden="true">
+            <span></span>
+          </span>
+          <span>
+            <strong>1 page</strong>
+            <small>Focus on one page at a time</small>
+          </span>
+        </button>
+        <button
+          class="layout-choice-button layout-choice-button-primary"
+          type="button"
+          data-layout-choice="spread"
+          autofocus
+        >
+          <span class="layout-choice-preview layout-choice-preview-spread" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+          <span>
+            <strong>2 pages</strong>
+            <small>Read interior pages as a spread</small>
+          </span>
+        </button>
+      </div>
+    </div>
+  </dialog>
 </main>
 
 <script type="module" src="/js/magazine-viewer.js"></script>
