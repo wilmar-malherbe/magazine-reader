@@ -6,7 +6,9 @@
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#171b22">
     <title><%= title ? `${title} · ${appName}` : appName %></title>
-    <link rel="stylesheet" href="/css/styles.css">
+    <% if (canonicalUrl) { %><link rel="canonical" href="<%= canonicalUrl %>"><% } %>
+    <% if (description) { %><meta name="description" content="<%= description.slice(0, 300) %>"><% } %>
+    <link rel="stylesheet" href="/css/styles.css?v=2">
   </head>
   <body class="<%= locals.bodyClass || '' %>">
     <% if (!locals.hideHeader) { %>

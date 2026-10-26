@@ -1338,3 +1338,11 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Server-rendered document information also works before PDF.js loads. */
+.reader-info { grid-column: 1 / -1; font-size: .8rem; }
+.reader-info summary { cursor: pointer; min-height: 28px; padding: 5px 0; color: #dfe3e9; }
+.reader-info-panel { position: absolute; z-index: 35; top: 100%; left: 12px; right: 12px; max-height: 65vh; overflow: auto; padding: 24px; background: #171b22; border: 1px solid #4e5764; border-radius: 8px; line-height: 1.65; overflow-wrap: anywhere; box-shadow: 0 12px 32px #0006; }
+.reader-info-panel h2 { font-size: 1.25rem; }
+.reader-info-panel a { color: #c3d9ff; }
+.reader-preview-note { color: #b3bac5; }

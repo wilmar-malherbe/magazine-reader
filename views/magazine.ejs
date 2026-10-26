@@ -37,6 +37,20 @@
     <% } else { %>
       <span class="viewer-header-spacer" aria-hidden="true"></span>
     <% } %>
+    <details class="reader-info" open>
+      <summary>About this issue and text preview</summary>
+      <section class="reader-info-panel" aria-label="Document information">
+        <h2><%= magazine.title %></h2>
+        <% if (magazine.description) { %><p><%= magazine.description %></p><% } %>
+        <p><a href="/media/pdfs/<%= magazine.pdf_filename %>">Open the original PDF</a> to read the complete document in your browser.</p>
+        <noscript><p>The flipbook needs JavaScript. The PDF and text preview remain available here.</p></noscript>
+        <% if (textPreview.length) { %>
+          <h3>Text preview</h3>
+          <p class="reader-preview-note">Extracted from the first six pages. Use the original PDF for complete content and formatting.</p>
+          <% textPreview.forEach(paragraph => { %><p><%= paragraph %></p><% }) %>
+        <% } %>
+      </section>
+    </details>
   </header>
 
   <section class="viewer-stage" id="viewer-stage" aria-label="<%= magazine.title %> reader">
@@ -147,5 +161,5 @@
   </dialog>
 </main>
 
-<script type="module" src="/js/magazine-viewer.js"></script>
+<script type="module" src="/js/magazine-viewer.js?v=2"></script>
 <%- include("partials/foot", { hideFooter: true }) %>

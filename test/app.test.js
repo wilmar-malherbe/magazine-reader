@@ -158,6 +158,15 @@ describe("MagShelf HTTP application", { concurrency: false }, () => {
       assert.match(viewer.text, /id="layout-switch"/);
       assert.match(viewer.text, /magazine-viewer\.js/);
 
+      assert.match(viewer.text, /rel="canonical" href="http:\/\/localhost:3000\/m\/school-magazine-term-2"/);
+      assert.match(viewer.text, /name="description" content="Stories from around our school\."/);
+      assert.match(viewer.text, /About this issue and text preview/);
+      assert.match(viewer.text, /Test Magazine.*Page 1/);
+      assert.match(viewer.text, /Open the original PDF/);
+      const variant = await anonymous.get(`/m/${row.slug}?page=2`);
+      assert.match(variant.text, /rel="canonical" href="http:\/\/localhost:3000\/m\/school-magazine-term-2"/);
+      assert.equal(viewer.headers["cache-control"], "no-store");
+
       const publicPdf = await anonymous.get(`/media/pdfs/${row.pdf_filename}`);
       assert.equal(publicPdf.status, 200);
       assert.match(publicPdf.headers["content-type"], /application\/pdf/);
@@ -208,6 +217,13 @@ describe("MagShelf HTTP application", { concurrency: false }, () => {
         (await admin.get(`/media/pdfs/${row.pdf_filename}`)).status,
         200,
       );
+
+      const privatePreview = await admin.get(`/m/${row.slug}`);
+      assert.equal(privatePreview.headers["x-robots-tag"], "noindex, nofollow");
+      const originalPath = path.join(dataDir, "uploads", "pdfs", row.pdf_filename);
+      fs.renameSync(originalPath, originalPath + ".temporarily-missing");
+      assert.equal((await admin.get(`/m/${row.slug}`)).status, 404);
+      fs.renameSync(originalPath + ".temporarily-missing", originalPath);
 
       const edited = await admin
         .post(`/admin/magazines/${row.id}/edit`)

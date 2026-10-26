@@ -167,5 +167,41 @@ backup, confirm ownership is still UID/GID `1000`, and restart.
 - Back up `/data` regularly and keep the host and container image updated.
 
 MagShelf is intentionally a single-admin application. Multiple users, external
-authentication, analytics, categories, and server-side PDF conversion are
+authentication, analytics, categories, and PDF page-image conversion are
 outside version 1.
+
+## Search indexing and document previews
+
+Reader pages include their own canonical URL, description and a server-rendered
+text preview of the first six PDF pages under “About this issue and text preview”.
+The preview is initially open until the first PDF page renders. It also provides
+an original-PDF link for no-JavaScript readers. Text is escaped, parsing is bounded and cached per file
+revision, and missing files return a real 404. Unpublished issues retain access
+checks and are excluded from indexing even in an admin preview.
+
+Install Poppler (`poppler-utils` on Debian/Ubuntu, `poppler` with Homebrew) for
+text previews. The Docker runtime includes it. Scanned PDFs or unavailable text
+conversion fall back to the document description and PDF link without failing
+the reader. Set `PUBLIC_BASE_URL` to the actual HTTPS site origin, for example
+`https://media.malherbes.co`, so canonical links identify the public site.
+
+### Production mapping and 26 October 2026 finding
+
+GitHub `wilmar-malherbe/magazine-reader`, branch `main`, deploys to
+`/root/magazine-reader` on `nodejs-apps`. Restart only the existing PM2 process
+`magshelf - pdf viewer online`, port `6775`. Persistent uploads and SQLite live
+in `/data`, outside the repository; preserve those and the private `.env`.
+
+Search Console's `malherbes.co` domain property flagged two public annual-report
+reader URLs under `media.malherbes.co`, not the company homepage. They returned
+200 but contained only a title and JavaScript/canvas reader while the full
+87 MB PDF loaded. The published description and real extracted text now appear
+in initial HTML. This addresses the empty-reader presentation; only Google's
+recrawl can confirm the final indexing classification.
+
+Validation: five HTTP/preview checks and three responsive browser scenarios pass,
+including page turning, layout choice, zoom, and readable no-JavaScript content.
+Desktop and no-JavaScript phone screenshots were inspected. No database or
+upload schema changes, document rewrites, dependencies or public access changes
+are part of this release. Existing dependency audit advisories are outside the
+SEO correction.

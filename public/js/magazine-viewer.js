@@ -592,6 +592,7 @@ if (viewer) {
 
       await renderPage(0);
       loading.hidden = true;
+      document.querySelector(".reader-info").open = false;
       previousButton.disabled = true;
       nextButton.disabled = state.pdf.numPages <= 1;
       zoomInButton.disabled = false;

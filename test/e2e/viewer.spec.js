@@ -54,6 +54,12 @@ test("library, admin, and reader adapt to the viewport", async ({
   await expect(page.locator("#viewer-loading")).toBeHidden();
   await expect(page.locator(".page-surface.is-rendered")).not.toHaveCount(0);
 
+  await page.getByText("About this issue and text preview", { exact: true }).click();
+  await expect(page.getByRole("region", { name: "Document information" })).toBeVisible();
+  await expect(page.locator(".reader-info-panel")).toContainText("Responsive Magazine");
+  await expect(page.getByRole("link", { name: "Open the original PDF" })).toBeVisible();
+  await page.getByText("About this issue and text preview", { exact: true }).click();
+
   const expectedOrientation = isDesktop ? "landscape" : "portrait";
   await expect(page.locator("#magazine-viewer")).toHaveAttribute(
     "data-orientation",
@@ -147,6 +153,16 @@ test("library, admin, and reader adapt to the viewport", async ({
   );
   expect(overflow).toBe(false);
   await expect(page.locator(".viewer-toolbar")).toBeVisible();
+
+  await page.screenshot({ path: `test-results/reader-${testInfo.project.name}.png` });
+  const noJs = await page.context().browser().newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  const fallback = await noJs.newPage();
+  await fallback.goto(page.url());
+  await expect(fallback.getByRole("region", { name: "Document information" })).toBeVisible();
+  await expect(fallback.locator(".reader-info-panel")).toContainText("Responsive Magazine");
+  await expect(fallback.getByRole("link", { name: "Open the original PDF" })).toBeVisible();
+  await fallback.screenshot({ path: `test-results/reader-no-js-${testInfo.project.name}.png` });
+  await noJs.close();
 
   if (isDesktop) {
     await page.reload();

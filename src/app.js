@@ -19,6 +19,7 @@ const {
   validateUpload,
 } = require("./files");
 const { createUploadMiddleware } = require("./upload");
+const { createDocumentPreview } = require("./document-preview");
 const { BetterSqliteSessionStore } = require("./session-store");
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -102,6 +103,7 @@ function setFlash(req, type, message) {
 
 function createApp(config) {
   const app = express();
+  const documentPreview = createDocumentPreview();
   const { db, paths } = openDatabase(config.dataDir);
   const sessionStore = new BetterSqliteSessionStore(db);
   const upload = createUploadMiddleware(config, paths);
@@ -158,6 +160,8 @@ function createApp(config) {
     res.locals.allowPublicDownload = config.allowPublicDownload;
     res.locals.isAdmin = isAdmin(req);
     res.locals.currentPath = req.path;
+    res.locals.canonicalUrl = null;
+    res.locals.description = null;
     res.locals.flash = req.session.flash || null;
     delete req.session.flash;
     res.locals.formatDate = (value) => {
@@ -227,10 +231,13 @@ function createApp(config) {
            created_at DESC`,
       )
       .all();
-    res.render("index", { title: config.appName, magazines });
+    res.render("index", { title: config.appName, magazines,
+      canonicalUrl: new URL("/", config.publicBaseUrl).href,
+      description: "Browse published magazines and reports, and read each issue online.",
+    });
   });
 
-  app.get("/m/:slug", (req, res) => {
+  app.get("/m/:slug", async (req, res) => {
     const magazine = db
       .prepare("SELECT * FROM magazines WHERE slug = ?")
       .get(req.params.slug);
@@ -241,9 +248,20 @@ function createApp(config) {
         message: "That magazine is not available.",
       });
     }
+    const pdfPath = safeMediaPath(paths.pdfs, magazine.pdf_filename);
+    const textPreview = pdfPath ? await documentPreview(pdfPath) : null;
+    if (textPreview === null) {
+      return res.status(404).render("error", {
+        title: "Magazine not found", status: 404,
+        message: "That magazine is not available.",
+      });
+    }
+    res.set("Cache-Control", "no-store");
+    if (!magazine.is_published) res.set("X-Robots-Tag", "noindex, nofollow");
     return res.render("magazine", {
-      title: magazine.title,
-      magazine,
+      title: magazine.title, magazine, textPreview,
+      canonicalUrl: new URL(`/m/${magazine.slug}`, config.publicBaseUrl).href,
+      description: magazine.description || `Read ${magazine.title}${magazine.issue_label ? ` (${magazine.issue_label})` : ""} online in the PDF reader.`,
     });
   });
 
